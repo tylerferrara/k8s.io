@@ -30,6 +30,8 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 deploy_cip_auditor()
 {
+    local PROJECT_ID = k8s-artifacts-prod
+    
     # Deploy the auditor. The "--update-env-vars" is critical as it points to
     # the reference set of official promoter manifests to validate GCR changes
     # against. Note that there is no need to specify the
@@ -45,7 +47,7 @@ deploy_cip_auditor()
     CLOUD_RUN_SERVICE_ACCOUNT="$(svc_acct_email "${PROJECT_ID}" "${AUDITOR_SVCACCT}")"
 
     gcloud run deploy "${AUDITOR_SERVICE_NAME}" \
-        --image="us.gcr.io/k8s-artifacts-prod/artifact-promoter/cip-auditor@sha256:${CIP_AUDITOR_DIGEST}" \
+        --image="gcr.io/k8s-staging-artifact-promoter/cip-auditor:latest" \
         --update-env-vars="CIP_AUDIT_MANIFEST_REPO_URL=https://github.com/kubernetes/k8s.io,CIP_AUDIT_MANIFEST_REPO_BRANCH=main,CIP_AUDIT_MANIFEST_REPO_MANIFEST_DIR=k8s.gcr.io,CIP_AUDIT_GCP_PROJECT_ID=k8s-artifacts-prod" \
         --platform=managed \
         --no-allow-unauthenticated \
@@ -56,28 +58,4 @@ deploy_cip_auditor()
         --max-instances=1
 }
 
-usage()
-{
-    echo >&2 "Usage: $0 <GCP_PROJECT_ID> <CIP_AUDITOR_DIGEST>"
-    exit 1
-}
-
-main()
-{
-    if (( $# != 2 )); then
-        usage
-    fi
-
-    for arg; do
-        if [[ -z "$arg" ]]; then
-            usage
-        fi
-    done
-
-    PROJECT_ID="$1"
-    CIP_AUDITOR_DIGEST="$2"
-
-    deploy_cip_auditor
-}
-
-main "$@"
+deploy_cip_auditor
